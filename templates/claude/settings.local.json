@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": ["mcp__TalkToFigma__*"]
+  },
+  "enabledMcpjsonServers": ["TalkToFigma"],
+  "outputStyle": "Figma Design Agent"
+}
