@@ -31,7 +31,7 @@
     "@modelcontextprotocol/sdk": "1.13.1",
     "uuid": "latest",
     "ws": "latest",
-    "zod": "3.22.4"
+    "zod": "^3.25.0"
   },
   "repository": {
     "type": "git",
