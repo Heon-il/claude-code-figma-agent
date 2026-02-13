@@ -3963,15 +3963,16 @@ server.tool(
 // Apply Style Tool
 server.tool(
   "apply_style",
-  "Apply an existing style (paint, text, or effect) to a node in Figma",
+  "Apply an existing style (paint, text, or effect) to a node in Figma. Provide styleId or styleKey (or both). If styleId lookup fails, falls back to importing by styleKey.",
   {
     nodeId: z.string().describe("The ID of the node to apply the style to"),
-    styleId: z.string().describe("The ID of the style to apply"),
+    styleId: z.string().optional().describe("The ID of the style to apply"),
+    styleKey: z.string().optional().describe("The key of the style to import and apply (used as fallback if styleId fails)"),
     styleType: z.enum(["fill", "stroke", "text", "effect"]).describe("Which property to apply the style to"),
   },
-  async ({ nodeId, styleId, styleType }: any) => {
+  async ({ nodeId, styleId, styleKey, styleType }: any) => {
     try {
-      const result = await sendCommandToFigma("apply_style", { nodeId, styleId, styleType });
+      const result = await sendCommandToFigma("apply_style", { nodeId, styleId, styleKey, styleType });
       const typedResult = result as { name: string; styleName: string };
       return {
         content: [{ type: "text", text: `Applied ${styleType} style "${typedResult.styleName}" to "${typedResult.name}"` }],
@@ -4458,7 +4459,7 @@ type CommandParams = {
   create_paint_style: { name: string; paints: Array<{ type: string; color?: { r: number; g: number; b: number; a?: number }; opacity?: number }> };
   create_text_style: { name: string; fontFamily: string; fontStyle?: string; fontSize: number; lineHeight?: { value: number; unit: string }; letterSpacing?: { value: number; unit: string } };
   create_effect_style: { name: string; effects: Array<{ type: string; color?: { r: number; g: number; b: number; a?: number }; offset?: { x: number; y: number }; radius?: number; spread?: number; visible?: boolean }> };
-  apply_style: { nodeId: string; styleId: string; styleType: string };
+  apply_style: { nodeId: string; styleId?: string; styleKey?: string; styleType: string };
   set_reactions: { nodeId: string; reactions: Array<{ trigger: { type: string }; action: { type: string; destinationId?: string; navigation?: string; transition?: { type: string; duration: number } } }> };
 };
 

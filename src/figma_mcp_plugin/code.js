@@ -5567,9 +5567,12 @@ async function createEffectStyle(params) {
 }
 
 async function applyStyle(params) {
-  const { nodeId, styleId, styleType } = params || {};
-  if (!nodeId || !styleId || !styleType) {
-    throw new Error("Missing nodeId, styleId, or styleType parameter");
+  const { nodeId, styleId, styleKey, styleType } = params || {};
+  if (!nodeId || !styleType) {
+    throw new Error("Missing nodeId or styleType parameter");
+  }
+  if (!styleId && !styleKey) {
+    throw new Error("Either styleId or styleKey must be provided");
   }
 
   await figma.loadAllPagesAsync();
@@ -5577,27 +5580,74 @@ async function applyStyle(params) {
   const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found with ID: ${nodeId}`);
 
-  const style = await figma.getStyleByIdAsync(styleId);
-  if (!style) throw new Error(`Style not found with ID: ${styleId}`);
+  // Resolve the style: try styleId first, then fallback to styleKey
+  let style = null;
+  let resolvedStyleId = styleId;
+
+  if (styleId) {
+    try {
+      style = await figma.getStyleByIdAsync(styleId);
+    } catch (_) {
+      // getStyleByIdAsync failed, will try fallback
+    }
+  }
+
+  // Fallback: if style not found by ID, try importing by key
+  if (!style) {
+    let keyToImport = styleKey;
+    // If no explicit styleKey, try to extract key from styleId (format: "S:{key},")
+    if (!keyToImport && styleId) {
+      const match = styleId.match(/^S:([^,]+),/);
+      if (match) {
+        keyToImport = match[1];
+      }
+    }
+    if (keyToImport) {
+      try {
+        style = await figma.importStyleByKeyAsync(keyToImport);
+        resolvedStyleId = style.id;
+      } catch (importError) {
+        throw new Error(`Style not found by ID "${styleId}" and failed to import by key "${keyToImport}": ${importError.message}`);
+      }
+    } else {
+      throw new Error(`Style not found with ID: ${styleId}`);
+    }
+  }
 
   switch (styleType) {
     case "fill":
       if (!("fillStyleId" in node)) throw new Error(`Node does not support fill styles`);
-      node.fillStyleId = styleId;
+      if (node.setFillStyleIdAsync) {
+        await node.setFillStyleIdAsync(resolvedStyleId);
+      } else {
+        node.fillStyleId = resolvedStyleId;
+      }
       break;
     case "stroke":
       if (!("strokeStyleId" in node)) throw new Error(`Node does not support stroke styles`);
-      node.strokeStyleId = styleId;
+      if (node.setStrokeStyleIdAsync) {
+        await node.setStrokeStyleIdAsync(resolvedStyleId);
+      } else {
+        node.strokeStyleId = resolvedStyleId;
+      }
       break;
     case "text":
       if (node.type !== "TEXT") throw new Error(`Only TEXT nodes support text styles`);
       if (style.type === "TEXT") await figma.loadFontAsync(style.fontName);
       await loadFontForTextNode(node);
-      node.textStyleId = styleId;
+      if (node.setTextStyleIdAsync) {
+        await node.setTextStyleIdAsync(resolvedStyleId);
+      } else {
+        node.textStyleId = resolvedStyleId;
+      }
       break;
     case "effect":
       if (!("effectStyleId" in node)) throw new Error(`Node does not support effect styles`);
-      node.effectStyleId = styleId;
+      if (node.setEffectStyleIdAsync) {
+        await node.setEffectStyleIdAsync(resolvedStyleId);
+      } else {
+        node.effectStyleId = resolvedStyleId;
+      }
       break;
     default:
       throw new Error(`Unknown style type: ${styleType}`);
@@ -5606,7 +5656,7 @@ async function applyStyle(params) {
   return {
     id: node.id,
     name: node.name,
-    styleId,
+    styleId: resolvedStyleId,
     styleName: style.name,
     styleType,
   };
