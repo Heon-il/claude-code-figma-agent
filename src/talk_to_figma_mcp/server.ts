@@ -1032,6 +1032,35 @@ server.tool(
   }
 );
 
+// Get Team Components Tool
+server.tool(
+  "get_team_components",
+  "Get all available components from team libraries linked to the current Figma file",
+  {},
+  async () => {
+    try {
+      const result = await sendCommandToFigma("get_team_components");
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result)
+          }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error getting team components: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+      };
+    }
+  }
+);
+
 // Get Annotations Tool
 server.tool(
   "get_annotations",
@@ -4096,6 +4125,7 @@ type FigmaCommand =
   | "get_team_library_text_styles"
   | "import_text_style_by_key"
   | "get_local_components"
+  | "get_team_components"
   | "create_component_instance"
   | "get_instance_overrides"
   | "set_instance_overrides"
@@ -4730,6 +4760,5 @@ main().catch(error => {
   logger.error(`Error starting FigmaMCP server: ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);
 });
-
 
 

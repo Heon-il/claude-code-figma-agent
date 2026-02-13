@@ -8,6 +8,9 @@
     "figma",
     "figjam"
   ],
+  "permissions": [
+    "teamlibrary"
+  ],
   "networkAccess": {
     "allowedDomains": [
       "ws://localhost:3055"
