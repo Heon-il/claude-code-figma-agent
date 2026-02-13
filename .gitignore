@@ -5,3 +5,4 @@ dist/
 .env
 bun.lock
 .claude/
+user-request/
