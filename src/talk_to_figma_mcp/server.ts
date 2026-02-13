@@ -965,7 +965,7 @@ server.tool(
 // Get Team Library Text Styles Tool
 server.tool(
   "get_team_library_text_styles",
-  "Get all available text styles from team libraries linked to the current Figma file",
+  "Get all text styles in the current Figma file (local and imported from team libraries). Use import_text_style_by_key with a known style key to import new styles.",
   {},
   async () => {
     try {
@@ -1035,7 +1035,7 @@ server.tool(
 // Get Team Components Tool
 server.tool(
   "get_team_components",
-  "Get all available components from team libraries linked to the current Figma file",
+  "Get all components in the current Figma file (local and imported from team libraries).",
   {},
   async () => {
     try {
@@ -3676,7 +3676,7 @@ server.tool(
 // Get Team Library Variables Tool
 server.tool(
   "get_team_library_variables",
-  "Get all available variables from team libraries linked to the current Figma file",
+  "Get all available variables from team library variable collections linked to the current Figma file.",
   {},
   async () => {
     try {

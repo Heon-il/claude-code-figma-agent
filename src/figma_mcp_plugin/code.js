@@ -1256,18 +1256,24 @@ async function getStyles() {
 
 async function getTeamLibraryTextStyles() {
   try {
-    const textStyles = await figma.teamLibrary.getAvailableLibraryTextStylesAsync();
+    const textStyles = await figma.getLocalTextStylesAsync();
     return {
       count: textStyles.length,
       textStyles: textStyles.map((style) => ({
+        id: style.id,
         key: style.key,
         name: style.name,
-        description: style.description,
-        libraryName: style.libraryName,
+        remote: style.remote,
+        fontSize: style.fontSize,
+        fontName: style.fontName,
+        letterSpacing: style.letterSpacing,
+        lineHeight: style.lineHeight,
+        textDecoration: style.textDecoration,
+        textCase: style.textCase,
       })),
     };
   } catch (error) {
-    throw new Error(`Error getting team library text styles: ${error.message}`);
+    throw new Error(`Error getting text styles: ${error.message}`);
   }
 }
 
@@ -1278,13 +1284,17 @@ async function importTextStyleByKey(params) {
   }
 
   try {
-    const style = await figma.teamLibrary.importTextStyleByKeyAsync(styleKey);
+    const style = await figma.importStyleByKeyAsync(styleKey);
     return {
       id: style.id,
       name: style.name,
       key: style.key,
+      type: style.type,
+      remote: style.remote,
       fontSize: style.fontSize,
       fontName: style.fontName,
+      letterSpacing: style.letterSpacing,
+      lineHeight: style.lineHeight,
     };
   } catch (error) {
     throw new Error(`Error importing text style by key: ${error.message}`);
@@ -1310,20 +1320,24 @@ async function getLocalComponents() {
 
 async function getTeamComponents() {
   try {
-    const teamComponents =
-      await figma.teamLibrary.getAvailableComponentsAsync();
+    await figma.loadAllPagesAsync();
+
+    const components = figma.root.findAllWithCriteria({
+      types: ["COMPONENT"],
+    });
 
     return {
-      count: teamComponents.length,
-      components: teamComponents.map((component) => ({
-        key: component.key,
+      count: components.length,
+      components: components.map((component) => ({
+        id: component.id,
+        key: "key" in component ? component.key : null,
         name: component.name,
         description: component.description,
-        libraryName: component.libraryName,
+        remote: component.remote,
       })),
     };
   } catch (error) {
-    throw new Error(`Error getting team components: ${error.message}`);
+    throw new Error(`Error getting components: ${error.message}`);
   }
 }
 
@@ -5197,15 +5211,27 @@ async function getLocalVariables() {
 
 async function getTeamLibraryVariables() {
   try {
-    const variables = await figma.teamLibrary.getAvailableLibraryVariablesAsync();
+    const collections = await figma.teamLibrary.getAvailableLibraryVariableCollectionsAsync();
+    const result = [];
+
+    for (const collection of collections) {
+      const variables = await figma.teamLibrary.getVariablesInLibraryCollectionAsync(collection.key);
+      result.push({
+        collectionKey: collection.key,
+        collectionName: collection.name,
+        libraryName: collection.libraryName,
+        variableCount: variables.length,
+        variables: variables.map((v) => ({
+          key: v.key,
+          name: v.name,
+          resolvedType: v.resolvedType,
+        })),
+      });
+    }
+
     return {
-      count: variables.length,
-      variables: variables.map((variable) => ({
-        key: variable.key,
-        name: variable.name,
-        description: variable.description,
-        libraryName: variable.libraryName,
-      })),
+      totalCollections: result.length,
+      collections: result,
     };
   } catch (error) {
     throw new Error(`Error getting team library variables: ${error.message}`);
@@ -5219,7 +5245,7 @@ async function importVariableByKey(params) {
   }
 
   try {
-    const variable = await figma.teamLibrary.importVariableByKeyAsync(variableKey);
+    const variable = await figma.variables.importVariableByKeyAsync(variableKey);
     return {
       id: variable.id,
       name: variable.name,
@@ -5565,6 +5591,7 @@ async function applyStyle(params) {
       break;
     case "text":
       if (node.type !== "TEXT") throw new Error(`Only TEXT nodes support text styles`);
+      if (style.type === "TEXT") await figma.loadFontAsync(style.fontName);
       await loadFontForTextNode(node);
       node.textStyleId = styleId;
       break;
