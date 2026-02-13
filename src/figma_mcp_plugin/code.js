@@ -141,6 +141,10 @@ async function handleCommand(command, params) {
       return await deleteMultipleNodes(params);
     case "get_styles":
       return await getStyles();
+    case "get_team_library_text_styles":
+      return await getTeamLibraryTextStyles();
+    case "import_text_style_by_key":
+      return await importTextStyleByKey(params);
     case "get_local_components":
       return await getLocalComponents();
     // case "get_team_components":
@@ -330,6 +334,10 @@ async function handleCommand(command, params) {
     // Phase 3: Power Features
     case "get_local_variables":
       return await getLocalVariables();
+    case "get_team_library_variables":
+      return await getTeamLibraryVariables();
+    case "import_variable_by_key":
+      return await importVariableByKey(params);
     case "get_variable_by_id":
       return await getVariableById(params);
     case "set_variable_binding":
@@ -1244,6 +1252,43 @@ async function getStyles() {
       key: style.key,
     })),
   };
+}
+
+async function getTeamLibraryTextStyles() {
+  try {
+    const textStyles = await figma.teamLibrary.getAvailableLibraryTextStylesAsync();
+    return {
+      count: textStyles.length,
+      textStyles: textStyles.map((style) => ({
+        key: style.key,
+        name: style.name,
+        description: style.description,
+        libraryName: style.libraryName,
+      })),
+    };
+  } catch (error) {
+    throw new Error(`Error getting team library text styles: ${error.message}`);
+  }
+}
+
+async function importTextStyleByKey(params) {
+  const { styleKey } = params || {};
+  if (!styleKey) {
+    throw new Error("Missing styleKey parameter");
+  }
+
+  try {
+    const style = await figma.teamLibrary.importTextStyleByKeyAsync(styleKey);
+    return {
+      id: style.id,
+      name: style.name,
+      key: style.key,
+      fontSize: style.fontSize,
+      fontName: style.fontName,
+    };
+  } catch (error) {
+    throw new Error(`Error importing text style by key: ${error.message}`);
+  }
 }
 
 async function getLocalComponents() {
@@ -5149,6 +5194,42 @@ async function getLocalVariables() {
   return { collections: result, totalCollections: result.length };
 }
 
+async function getTeamLibraryVariables() {
+  try {
+    const variables = await figma.teamLibrary.getAvailableLibraryVariablesAsync();
+    return {
+      count: variables.length,
+      variables: variables.map((variable) => ({
+        key: variable.key,
+        name: variable.name,
+        description: variable.description,
+        libraryName: variable.libraryName,
+      })),
+    };
+  } catch (error) {
+    throw new Error(`Error getting team library variables: ${error.message}`);
+  }
+}
+
+async function importVariableByKey(params) {
+  const { variableKey } = params || {};
+  if (!variableKey) {
+    throw new Error("Missing variableKey parameter");
+  }
+
+  try {
+    const variable = await figma.teamLibrary.importVariableByKeyAsync(variableKey);
+    return {
+      id: variable.id,
+      name: variable.name,
+      resolvedType: variable.resolvedType,
+      valuesByMode: variable.valuesByMode,
+    };
+  } catch (error) {
+    throw new Error(`Error importing variable by key: ${error.message}`);
+  }
+}
+
 async function getVariableById(params) {
   const { variableId } = params || {};
   if (!variableId) throw new Error("Missing variableId parameter");
@@ -5467,7 +5548,7 @@ async function applyStyle(params) {
   const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found with ID: ${nodeId}`);
 
-  const style = figma.getStyleById(styleId);
+  const style = await figma.getStyleByIdAsync(styleId);
   if (!style) throw new Error(`Style not found with ID: ${styleId}`);
 
   switch (styleType) {

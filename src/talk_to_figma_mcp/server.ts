@@ -962,6 +962,46 @@ server.tool(
   }
 );
 
+// Get Team Library Text Styles Tool
+server.tool(
+  "get_team_library_text_styles",
+  "Get all available text styles from team libraries linked to the current Figma file",
+  {},
+  async () => {
+    try {
+      const result = await sendCommandToFigma("get_team_library_text_styles");
+      return {
+        content: [{ type: "text", text: JSON.stringify(result) }],
+      };
+    } catch (error) {
+      return {
+        content: [{ type: "text", text: `Error getting team library text styles: ${error instanceof Error ? error.message : String(error)}` }],
+      };
+    }
+  }
+);
+
+// Import Text Style By Key Tool
+server.tool(
+  "import_text_style_by_key",
+  "Import a text style from a team library by its key, making it available for use in the current file",
+  {
+    styleKey: z.string().describe("The key of the text style to import from the team library"),
+  },
+  async ({ styleKey }: any) => {
+    try {
+      const result = await sendCommandToFigma("import_text_style_by_key", { styleKey });
+      return {
+        content: [{ type: "text", text: JSON.stringify(result) }],
+      };
+    } catch (error) {
+      return {
+        content: [{ type: "text", text: `Error importing text style: ${error instanceof Error ? error.message : String(error)}` }],
+      };
+    }
+  }
+);
+
 // Get Local Components Tool
 server.tool(
   "get_local_components",
@@ -3604,6 +3644,46 @@ server.tool(
   }
 );
 
+// Get Team Library Variables Tool
+server.tool(
+  "get_team_library_variables",
+  "Get all available variables from team libraries linked to the current Figma file",
+  {},
+  async () => {
+    try {
+      const result = await sendCommandToFigma("get_team_library_variables");
+      return {
+        content: [{ type: "text", text: JSON.stringify(result) }],
+      };
+    } catch (error) {
+      return {
+        content: [{ type: "text", text: `Error getting team library variables: ${error instanceof Error ? error.message : String(error)}` }],
+      };
+    }
+  }
+);
+
+// Import Variable By Key Tool
+server.tool(
+  "import_variable_by_key",
+  "Import a variable from a team library by its key, making it available for use in the current file",
+  {
+    variableKey: z.string().describe("The key of the variable to import from the team library"),
+  },
+  async ({ variableKey }: any) => {
+    try {
+      const result = await sendCommandToFigma("import_variable_by_key", { variableKey });
+      return {
+        content: [{ type: "text", text: JSON.stringify(result) }],
+      };
+    } catch (error) {
+      return {
+        content: [{ type: "text", text: `Error importing variable: ${error instanceof Error ? error.message : String(error)}` }],
+      };
+    }
+  }
+);
+
 // Get Variable By ID Tool
 server.tool(
   "get_variable_by_id",
@@ -4013,6 +4093,8 @@ type FigmaCommand =
   | "delete_node"
   | "delete_multiple_nodes"
   | "get_styles"
+  | "get_team_library_text_styles"
+  | "import_text_style_by_key"
   | "get_local_components"
   | "create_component_instance"
   | "get_instance_overrides"
@@ -4091,6 +4173,8 @@ type FigmaCommand =
   | "set_paragraph_indent"
   // Phase 3: Power Features
   | "get_local_variables"
+  | "get_team_library_variables"
+  | "import_variable_by_key"
   | "get_variable_by_id"
   | "set_variable_binding"
   | "create_image"
@@ -4169,6 +4253,8 @@ type CommandParams = {
     nodeIds: string[];
   };
   get_styles: Record<string, never>;
+  get_team_library_text_styles: Record<string, never>;
+  import_text_style_by_key: { styleKey: string };
   get_local_components: Record<string, never>;
   get_team_components: Record<string, never>;
   create_component_instance: {
@@ -4331,6 +4417,8 @@ type CommandParams = {
   set_paragraph_indent: { nodeId: string; indent: number };
   // Phase 3: Power Features
   get_local_variables: Record<string, never>;
+  get_team_library_variables: Record<string, never>;
+  import_variable_by_key: { variableKey: string };
   get_variable_by_id: { variableId: string };
   set_variable_binding: { nodeId: string; field: string; variableId: string };
   create_image: { imageBytes: string; x?: number; y?: number; width?: number; height?: number; name?: string; parentId?: string };
