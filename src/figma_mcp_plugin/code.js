@@ -4477,6 +4477,7 @@ async function createStar(params) {
 // ============================================
 
 async function getPages() {
+  await figma.loadAllPagesAsync();
   const pages = figma.root.children.map(page => ({
     id: page.id,
     name: page.name,
